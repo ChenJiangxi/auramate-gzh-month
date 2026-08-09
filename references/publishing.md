@@ -2,7 +2,7 @@
 
 ## AuraMate 产品截图
 
-官网入口使用 `https://auramate.com.cn`，登录和产品页可能跳转到 `https://auramate.net`。优先复用用户已登录的 Chrome 会话；需要脚本登录时运行：
+官网入口使用 `https://auramate.com.cn`，登录和产品页可能跳转到 `https://auramate.net`。每次生成文章都必须运行截图脚本，让 Chrome 登录后实时访问产品页：
 
 ```bash
 export AURAMATE_EMAIL="用户账号"
@@ -12,7 +12,17 @@ python3 scripts/capture_auramate.py
 unset AURAMATE_PASSWORD
 ```
 
-也可以设置 `AURAMATE_CAPTURE_DIR` 指定截图输出目录。不要把真实密码写入仓库中的 `.env`、Markdown、脚本或提交记录。
+本机也可将账号写入被 Git 忽略的 `scripts/auramate_credentials.local.json`，结构参考 `assets/templates/auramate_credentials.local.example.json`。脚本优先读取环境变量，其次读取本机凭据文件；不要把真实密码提交到公开仓库。
+
+截图后必须运行：
+
+```bash
+python3 scripts/check_capture.py --assets work/assets
+```
+
+检查器要求 `work/assets/auramate-capture.json` 标记来源为 `live-chrome`，包含两张在线产品页 URL，且采集时间不超过 12 小时。示例目录中的产品图只用于版式参考，不得代替实时截图。
+
+也可以设置 `AURAMATE_CAPTURE_DIR` 指定截图输出目录。
 
 需要两张未打码截图：
 

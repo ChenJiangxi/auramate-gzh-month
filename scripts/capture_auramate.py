@@ -1,4 +1,10 @@
+#!/usr/bin/env python3
+"""Log in with Chrome and capture live AuraMate product pages."""
+
+from __future__ import annotations
+
 import base64
+from datetime import datetime, timezone
 import json
 import os
 import socket
@@ -14,10 +20,18 @@ ASSETS = Path(os.environ.get("AURAMATE_CAPTURE_DIR", str(ROOT / "work/assets")))
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 PORT = int(os.environ.get("AURAMATE_CDP_PORT", "9337"))
 PROFILE = os.environ.get("AURAMATE_CDP_PROFILE", "/private/tmp/auramate-gzh-month-cdp")
-EMAIL = os.environ.get("AURAMATE_EMAIL", "")
-PASSWORD = os.environ.get("AURAMATE_PASSWORD", "")
-SESSION_FILE = Path(os.environ.get("AURAMATE_SESSION_FILE", str(ROOT / "work/auramate-session.json")))
-FORTUNE_URL = os.environ.get("AURAMATE_FORTUNE_URL", "https://auramate.net/play/fortune-2026")
+CREDENTIALS_FILE = Path(
+    os.environ.get("AURAMATE_CREDENTIALS_FILE", str(ROOT / "scripts/auramate_credentials.local.json"))
+).expanduser()
+FORTUNE_URL = os.environ.get("AURAMATE_FORTUNE_URL", "https://auramate.com.cn/play/fortune-2026")
+MATCH_CANDIDATES = [
+    "https://auramate.com.cn/play/fate-match",
+    "https://auramate.com.cn/play/relationship",
+    "https://auramate.com.cn/play/compatibility",
+    "https://auramate.com.cn/play/love",
+    "https://auramate.com.cn/play/match",
+    "https://auramate.com.cn/app",
+]
 
 
 class CDP:
@@ -27,7 +41,7 @@ class CDP:
         host, port = host_port.split(":")
         self.sock = socket.create_connection((host, int(port)), timeout=10)
         key = base64.b64encode(os.urandom(16)).decode()
-        req = (
+        request = (
             f"GET /{path} HTTP/1.1\r\n"
             f"Host: {host_port}\r\n"
             "Upgrade: websocket\r\n"
@@ -35,10 +49,10 @@ class CDP:
             f"Sec-WebSocket-Key: {key}\r\n"
             "Sec-WebSocket-Version: 13\r\n\r\n"
         )
-        self.sock.sendall(req.encode())
-        resp = self.sock.recv(4096)
-        if b"101" not in resp.split(b"\r\n", 1)[0]:
-            raise RuntimeError(resp.decode(errors="ignore"))
+        self.sock.sendall(request.encode())
+        response = self.sock.recv(4096)
+        if b"101" not in response.split(b"\r\n", 1)[0]:
+            raise RuntimeError(response.decode(errors="ignore"))
         self.next_id = 0
 
     def _send_frame(self, payload):
@@ -54,17 +68,17 @@ class CDP:
             header.extend(struct.pack("!Q", len(data)))
         mask = os.urandom(4)
         header.extend(mask)
-        masked = bytes(b ^ mask[i % 4] for i, b in enumerate(data))
-        self.sock.sendall(header + masked)
+        header.extend(bytes(value ^ mask[index % 4] for index, value in enumerate(data)))
+        self.sock.sendall(header)
 
-    def _recv_exact(self, n):
-        buf = b""
-        while len(buf) < n:
-            chunk = self.sock.recv(n - len(buf))
+    def _recv_exact(self, size):
+        data = b""
+        while len(data) < size:
+            chunk = self.sock.recv(size - len(data))
             if not chunk:
                 raise EOFError
-            buf += chunk
-        return buf
+            data += chunk
+        return data
 
     def recv(self):
         chunks = []
@@ -78,7 +92,7 @@ class CDP:
                 length = struct.unpack("!Q", self._recv_exact(8))[0]
             if second & 0x80:
                 mask = self._recv_exact(4)
-                payload = bytes(b ^ mask[i % 4] for i, b in enumerate(self._recv_exact(length)))
+                payload = bytes(value ^ mask[index % 4] for index, value in enumerate(self._recv_exact(length)))
             else:
                 payload = self._recv_exact(length)
             if opcode == 8:
@@ -90,15 +104,15 @@ class CDP:
 
     def call(self, method, params=None, timeout=20):
         self.next_id += 1
-        msg_id = self.next_id
-        self._send_frame(json.dumps({"id": msg_id, "method": method, "params": params or {}}))
+        message_id = self.next_id
+        self._send_frame(json.dumps({"id": message_id, "method": method, "params": params or {}}))
         deadline = time.time() + timeout
         while time.time() < deadline:
-            msg = self.recv()
-            if msg.get("id") == msg_id:
-                if "error" in msg:
-                    raise RuntimeError(msg["error"])
-                return msg.get("result", {})
+            message = self.recv()
+            if message.get("id") == message_id:
+                if "error" in message:
+                    raise RuntimeError(message["error"])
+                return message.get("result", {})
         raise TimeoutError(method)
 
 
@@ -106,15 +120,26 @@ def wait_http(url, timeout=12):
     deadline = time.time() + timeout
     while time.time() < deadline:
         try:
-            with urllib.request.urlopen(url, timeout=1) as r:
-                return json.loads(r.read())
+            with urllib.request.urlopen(url, timeout=1) as response:
+                return json.loads(response.read())
         except Exception:
             time.sleep(0.2)
     raise TimeoutError(url)
 
 
+def load_credentials():
+    email = os.environ.get("AURAMATE_EMAIL", "")
+    password = os.environ.get("AURAMATE_PASSWORD", "")
+    if email and password:
+        return email, password
+    if CREDENTIALS_FILE.is_file():
+        data = json.loads(CREDENTIALS_FILE.read_text(encoding="utf-8"))
+        return data.get("email", ""), data.get("password", "")
+    return "", ""
+
+
 def start_chrome():
-    args = [
+    arguments = [
         CHROME,
         "--headless=new",
         "--disable-gpu",
@@ -125,122 +150,135 @@ def start_chrome():
         "--window-size=1280,1180",
         "about:blank",
     ]
-    return subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return subprocess.Popen(arguments, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
 
-def nav(cdp, url, wait=3):
+def evaluate(cdp, expression):
+    return cdp.call(
+        "Runtime.evaluate",
+        {"expression": expression, "returnByValue": True},
+    ).get("result", {}).get("value")
+
+
+def navigate(cdp, url, wait=3):
     cdp.call("Page.navigate", {"url": url})
     time.sleep(wait)
 
 
-def eval_js(cdp, expr, await_promise=False):
-    return cdp.call(
-        "Runtime.evaluate",
-        {"expression": expr, "awaitPromise": await_promise, "returnByValue": True},
-    ).get("result", {}).get("value")
+def page_state(cdp):
+    return evaluate(cdp, """
+(() => ({
+  url: location.href,
+  title: document.title,
+  text: document.body.innerText.slice(0, 2400),
+  loginInput: Array.from(document.querySelectorAll('input[type=password]')).some(el => el.offsetParent !== null)
+}))()
+""") or {}
+
+
+def login(cdp, email, password):
+    if not email or not password:
+        raise RuntimeError(f"未找到 AuraMate 登录信息；请设置环境变量或本机文件 {CREDENTIALS_FILE}")
+    navigate(cdp, "https://auramate.com.cn", 3)
+    evaluate(cdp, """
+(() => {
+  const compact = element => (element.innerText || '').replace(/\\s/g, '');
+  const button = Array.from(document.querySelectorAll('button')).find(el => compact(el) === '登录');
+  if (button) button.click();
+})()
+""")
+    time.sleep(1.5)
+    evaluate(cdp, """
+(() => {
+  const button = Array.from(document.querySelectorAll('button')).find(el => (el.innerText || '').includes('密码登录'));
+  if (button) button.click();
+})()
+""")
+    time.sleep(1)
+    evaluate(cdp, f"""
+(() => {{
+  const setValue = (element, value) => {{
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(element, value);
+    element.dispatchEvent(new Event('input', {{bubbles:true}}));
+    element.dispatchEvent(new Event('change', {{bubbles:true}}));
+  }};
+  const inputs = Array.from(document.querySelectorAll('input')).filter(element => element.offsetParent !== null);
+  if (inputs[0]) setValue(inputs[0], {json.dumps(email)});
+  if (inputs[1]) setValue(inputs[1], {json.dumps(password)});
+  const compact = element => (element.innerText || '').replace(/\\s/g, '');
+  const button = Array.from(document.querySelectorAll('button')).find(el => ['登录', '登录/注册'].includes(compact(el)));
+  if (button) button.click();
+}})()
+""")
+    time.sleep(6)
+
+
+def require_product_page(cdp, label):
+    state = page_state(cdp)
+    if state.get("loginInput") or "/login" in state.get("url", ""):
+        raise RuntimeError(f"{label}仍停留在登录页，拒绝生成截图")
+    if not state.get("text", "").strip():
+        raise RuntimeError(f"{label}页面为空，拒绝生成截图")
+    return state
 
 
 def screenshot(cdp, path):
-    data = cdp.call("Page.captureScreenshot", {"format": "jpeg", "quality": 88, "captureBeyondViewport": False})["data"]
-    path.write_bytes(base64.b64decode(data))
+    encoded = cdp.call(
+        "Page.captureScreenshot",
+        {"format": "jpeg", "quality": 88, "captureBeyondViewport": False},
+    )["data"]
+    path.write_bytes(base64.b64decode(encoded))
 
 
 def main():
     ASSETS.mkdir(parents=True, exist_ok=True)
-    proc = start_chrome()
+    email, password = load_credentials()
+    process = start_chrome()
     try:
         pages = wait_http(f"http://127.0.0.1:{PORT}/json/list")
-        page = next((p for p in pages if p.get("type") == "page"), pages[0])
+        page = next((item for item in pages if item.get("type") == "page"), pages[0])
         cdp = CDP(page["webSocketDebuggerUrl"])
         cdp.call("Page.enable")
         cdp.call("Runtime.enable")
-        cdp.call("Network.enable")
-        if SESSION_FILE.exists():
-            session = json.loads(SESSION_FILE.read_text())
-            nav(cdp, "https://auramate.net", 2)
-            for item in (session.get("cookie") or "").split(";"):
-                if "=" in item:
-                    name, value = item.strip().split("=", 1)
-                    cdp.call("Network.setCookie", {"name": name, "value": value, "domain": "auramate.net", "path": "/", "secure": True})
-            storage_js = f"""
-(() => {{
-  const localItems = {json.dumps(session.get("localStorage") or {})};
-  const sessionItems = {json.dumps(session.get("sessionStorage") or {})};
-  for (const [k, v] of Object.entries(localItems)) localStorage.setItem(k, v);
-  for (const [k, v] of Object.entries(sessionItems)) sessionStorage.setItem(k, v);
-  return {{local: Object.keys(localStorage).length, session: Object.keys(sessionStorage).length}};
-}})()
-"""
-            eval_js(cdp, storage_js)
-        else:
-            if not EMAIL or not PASSWORD:
-                raise RuntimeError("未找到登录信息；请设置 AURAMATE_EMAIL 和 AURAMATE_PASSWORD")
-            nav(cdp, "https://auramate.com.cn", 3)
-            eval_js(cdp, """
-(() => {
-  const btn = Array.from(document.querySelectorAll('button')).find(e => (e.innerText || '').includes('密码登录'));
-  if (btn) btn.click();
-  return document.body.innerText.slice(0, 300);
-})()
-""")
-            time.sleep(1.2)
-            eval_js(cdp, f"""
-(() => {{
-  const fire = el => {{
-    el.dispatchEvent(new Event('input', {{bubbles:true}}));
-    el.dispatchEvent(new Event('change', {{bubbles:true}}));
-  }};
-  const setValue = (el, value) => {{
-    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-    setter.call(el, value);
-    fire(el);
-  }};
-  const inputs = Array.from(document.querySelectorAll('input')).filter(el => el.offsetParent !== null);
-  const email = {json.dumps(EMAIL)};
-  const password = {json.dumps(PASSWORD)};
-  if (inputs[0]) {{ inputs[0].focus(); setValue(inputs[0], email); }}
-  if (inputs[1]) {{ inputs[1].focus(); setValue(inputs[1], password); }}
-  const btn = Array.from(document.querySelectorAll('button')).find(b => /登录\\s*\\/\\s*注册|登录|登陆/.test(b.innerText || '') && !/验证码/.test(b.innerText || ''));
-  if (btn) btn.click();
-  return {{
-    text: document.body.innerText.slice(0, 500),
-    inputs: inputs.map(i => i.placeholder || i.type || '')
-  }};
-}})()
-""")
-            time.sleep(6)
-        nav(cdp, FORTUNE_URL, 5)
-        eval_js(cdp, "window.scrollTo(0, 0)")
+        login(cdp, email, password)
+
+        navigate(cdp, FORTUNE_URL, 5)
+        fortune_state = require_product_page(cdp, "财运分析")
+        evaluate(cdp, "window.scrollTo(0, 0)")
         time.sleep(1)
         screenshot(cdp, ASSETS / "auramate-fortune.jpg")
 
-        # Discover a likely relationship page, then capture the first one that renders relationship content.
-        candidates = [
-            "https://auramate.net/play/relationship",
-            "https://auramate.net/play/fate-match",
-            "https://auramate.net/play/compatibility",
-            "https://auramate.net/play/love",
-            "https://auramate.net/play/match",
-            "https://auramate.net/app",
-        ]
-        chosen = None
-        for url in candidates:
-            nav(cdp, url, 4)
-            text = eval_js(cdp, "document.body.innerText.slice(0, 2000)") or ""
-            if any(k in text for k in ["缘分", "合盘", "关系", "契合", "伴侣"]):
-                chosen = url
+        match_state = None
+        for url in MATCH_CANDIDATES:
+            navigate(cdp, url, 4)
+            state = page_state(cdp)
+            if any(keyword in state.get("text", "") for keyword in ["缘分", "合盘", "关系", "契合", "伴侣"]):
+                match_state = require_product_page(cdp, "缘分测算")
                 break
-        if chosen:
-            eval_js(cdp, "window.scrollTo(0, 0)")
-            time.sleep(1)
-            screenshot(cdp, ASSETS / "auramate-match.jpg")
-        print(json.dumps({"ok": True, "output_dir": str(ASSETS), "match_url": chosen}, ensure_ascii=False))
+        if not match_state:
+            raise RuntimeError("未找到可用的缘分测算产品页，拒绝沿用旧截图")
+        evaluate(cdp, "window.scrollTo(0, 0)")
+        time.sleep(1)
+        screenshot(cdp, ASSETS / "auramate-match.jpg")
+
+        manifest = {
+            "source": "live-chrome",
+            "captured_at": datetime.now(timezone.utc).isoformat(),
+            "fortune": {"url": fortune_state.get("url"), "file": "auramate-fortune.jpg"},
+            "match": {"url": match_state.get("url"), "file": "auramate-match.jpg"},
+        }
+        (ASSETS / "auramate-capture.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        print(json.dumps({"ok": True, "output_dir": str(ASSETS), "manifest": manifest}, ensure_ascii=False))
     finally:
-        proc.terminate()
+        process.terminate()
         try:
-            proc.wait(timeout=2)
+            process.wait(timeout=2)
         except subprocess.TimeoutExpired:
-            proc.kill()
+            process.kill()
 
 
 if __name__ == "__main__":

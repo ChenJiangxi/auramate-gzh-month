@@ -6,3 +6,4 @@ __pycache__/
 *.pyc
 work/
 dist/
+scripts/auramate_credentials.local.json

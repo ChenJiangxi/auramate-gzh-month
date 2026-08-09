@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 import shutil
 import sys
 import tempfile
@@ -14,6 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import bazi_core  # noqa: E402
+import check_capture  # noqa: E402
 import render_month_assets  # noqa: E402
 import render_wechat_html  # noqa: E402
 import title_rules  # noqa: E402
@@ -50,9 +52,13 @@ class BaziCoreTests(unittest.TestCase):
         self.assertEqual(len(colors), 5)
 
     def test_article_title_prefix_is_fixed_for_every_day_master(self) -> None:
+        self.assertEqual(
+            list(bazi_core.DAY_MASTER_NAMES.values()),
+            ["甲木", "乙木", "丙火", "丁火", "戊土", "己土", "庚金", "辛金", "壬水", "癸水"],
+        )
         for stem in bazi_core.STEMS:
             context = bazi_core.build_context(stem, "丙申", 2026, "2026.8.7 — 9.7")
-            expected = f'日主{stem}{context["day_master_element"]}的丙申月：'
+            expected = f'日主{context["day_master_name"]}的丙申月：'
             self.assertEqual(context["article_title_prefix"], expected)
             self.assertEqual(title_rules.validate_title(expected + "主题句", context), expected + "主题句")
             with self.assertRaises(ValueError):
@@ -62,6 +68,21 @@ class BaziCoreTests(unittest.TestCase):
         context = bazi_core.build_context("甲", "丙申", 2026, "2026.8.7 — 9.7")
         with self.assertRaises(ValueError):
             title_rules.validate_title("日主甲木的丙申月：", context)
+
+    def test_live_capture_manifest_is_required_and_fresh(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            assets = Path(temporary)
+            self.assertTrue(check_capture.validate_capture(assets, 12))
+            for name in ("auramate-fortune.jpg", "auramate-match.jpg"):
+                (assets / name).write_bytes(b"x" * 10_001)
+            manifest = {
+                "source": "live-chrome",
+                "captured_at": datetime.now(timezone.utc).isoformat(),
+                "fortune": {"url": "https://auramate.net/play/fortune-2026", "file": "auramate-fortune.jpg"},
+                "match": {"url": "https://auramate.net/app", "file": "auramate-match.jpg"},
+            }
+            (assets / "auramate-capture.json").write_text(json.dumps(manifest), encoding="utf-8")
+            self.assertEqual(check_capture.validate_capture(assets, 12), [])
 
 
 class PipelineTests(unittest.TestCase):

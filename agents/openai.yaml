@@ -1,4 +1,4 @@
 interface:
   display_name: "灵伴公众号流月运势"
-  short_description: "生成五行流月公众号深度文章、真实配图与标题正文一键复制预览页"
-  default_prompt: "Use $auramate-gzh-month 生成指定日主的流月公众号文章、真实产品配图和一键粘贴预览页。"
+  short_description: "生成十大日主流月文章、实时产品截图与一键复制预览页"
+  default_prompt: "Use $auramate-gzh-month 生成指定十大日主的流月公众号文章，登录 AuraMate 实时截取产品页，并交付固定格式标题与一键粘贴预览页。"

@@ -42,7 +42,7 @@ python3 scripts/bazi_core.py \
 
 按下列顺序写 3200–5000 个中文字符的 Markdown：
 
-一级标题固定为 `日主{天干}{五行}的{流月干支}月：{主题句}`，例如 `日主甲木的丙申月：xxx`。“日主”必须在最前，冒号使用全角 `：`，其后的主题句可随正文变化。
+一级标题固定为 `日主{十大日主之一}的{流月干支}月：{主题句}`。十大日主仅指 `甲木、乙木、丙火、丁火、戊土、己土、庚金、辛金、壬水、癸水`，不是让 agent 自由拼接“天干五行”。例如：`日主癸水的丙申月：财星透照与印星生身，让资源真正落地`。“日主”必须在最前，冒号使用全角 `：`。
 
 1. 开场：节气场景、日主与流月关系、核心矛盾。
 2. 固定提示：`以下内容以日主与流月关系为主，适合作为月度节奏参考；具体吉凶仍需结合完整八字、大运与流年同看。`
@@ -69,7 +69,7 @@ python3 scripts/render_month_assets.py \
 
 封面固定 `1410×600`（2.35:1）。“日主××的××月”使用粗宋体并保持一行；脚本应动态缩小字号，不得换行、挤压或错位。各日主主题色按五行变化，具体色板和背景提示词见视觉规范。
 
-产品截图必须来自 AuraMate 当前官网界面，直接使用真实、未打码截图，不在截图上叠加“产品截图示例”等说明。截图只证明产品功能与使用场景，不把样例命盘当作文章命盘。
+产品截图必须在每次任务中运行 `python3 scripts/capture_auramate.py`，由登录后的 Chrome 实时访问 AuraMate 后台／产品页并保存真实、未打码截图。随后运行 `python3 scripts/check_capture.py --assets work/assets`；只有带在线 URL、采集时间且不超过 12 小时的两张截图才能进入正文。仓库示例截图只用于版式参考，禁止直接复制到当次 `work/assets`。
 
 ### 4. 生成公众号 HTML
 
@@ -87,6 +87,8 @@ python3 scripts/render_month_assets.py \
 
 ```bash
 python3 scripts/check_article.py work/article.md --context work/context.json
+python3 scripts/capture_auramate.py
+python3 scripts/check_capture.py --assets work/assets
 python3 scripts/render_wechat_html.py \
   --context work/context.json \
   --article work/article.md \
@@ -108,7 +110,8 @@ python3 scripts/wrap_preview.py work/article.html --context work/context.json --
 ## 交付标准
 
 - 十神、藏干、关系图与正文完全一致。
-- 公众号标题严格使用 `日主{天干}{五行}的{流月干支}月：{主题句}`，并通过 `context.json` 校验。
+- 公众号标题严格从十大日主固定名称中取值，使用 `日主{十大日主之一}的{流月干支}月：{主题句}`，并通过 `context.json` 校验。
+- 两张 AuraMate 产品图均有当次实时 Chrome 采集清单，禁止沿用示例图或旧截图。
 - 封面 2.35:1，标题为粗宋体单行，无图注。
 - 五行主题有明显变化，同时保留 AuraMate 的金色品牌点缀。
 - 正文以洞察为主，配图为辅；六大日柱图与正文不机械重复。

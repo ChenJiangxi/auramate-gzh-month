@@ -13,7 +13,7 @@
 - **复制标题**：复制纯文本标题，粘贴到公众号标题框。
 - **复制正文**：复制带内联样式和图片的正文富文本，粘贴到公众号正文编辑器。
 
-公众号标题固定使用 `日主{天干}{五行}的{流月干支}月：{主题句}`，例如 `日主甲木的丙申月：xxx`。检查器和预览生成器都会依据 `context.json` 拒绝错误前缀。
+公众号标题固定使用 `日主{十大日主之一}的{流月干支}月：{主题句}`。十大日主固定为 `甲木、乙木、丙火、丁火、戊土、己土、庚金、辛金、壬水、癸水`，例如 `日主癸水的丙申月：财星透照与印星生身，让资源真正落地`。检查器和预览生成器都会依据 `context.json` 拒绝错误前缀。
 
 流程到预览页结束，不自动登录、修改或保存微信公众号后台。
 
@@ -74,7 +74,7 @@ python3 -m pip install -r requirements.txt
 1. 运行 `scripts/bazi_core.py`，生成唯一的 `context.json`。
 2. 按 `references/editorial-standard.md` 写 3200–5000 字 Markdown。
 3. 用图像生成模型制作无字封面背景，再运行 `scripts/render_month_assets.py` 叠字和画图。
-4. 从 AuraMate 官网取得财运分析、缘分测算两张真实截图。
+4. 运行 `scripts/capture_auramate.py`，从登录后的 AuraMate 在线产品页实时截取财运分析、缘分测算；再运行 `scripts/check_capture.py --assets work/assets` 检查采集时间与来源。
 5. 运行 `scripts/check_article.py work/article.md --context work/context.json` 检查结构与固定标题格式，再生成干净正文 HTML。
 6. 运行 `scripts/validate_gzh_html.py`，修到 0 ERROR、0 WARNING。
 7. 运行 `scripts/wrap_preview.py work/article.html --context work/context.json --title-file work/article.md`，再次校验标题并生成标题与正文可分别复制的预览页。
@@ -83,7 +83,7 @@ python3 -m pip install -r requirements.txt
 
 ## AuraMate 登录与截图
 
-`scripts/capture_auramate.py` 支持登录 `auramate.com.cn`／`auramate.net` 并直接保存未打码产品截图。登录信息只从当前环境变量读取：
+`scripts/capture_auramate.py` 支持登录 `auramate.com.cn`／`auramate.net` 并实时保存未打码产品截图。登录信息优先从当前环境变量读取：
 
 ```bash
 export AURAMATE_EMAIL="你的账号"
@@ -93,9 +93,9 @@ python3 scripts/capture_auramate.py
 unset AURAMATE_PASSWORD
 ```
 
-可参考 `assets/templates/auramate.env.example` 配置变量，但不要把填有真实密码的文件提交到 Git。这个仓库是公开远端，明文账号密码会永久进入提交历史，因此仓库不会内置真实凭据。
+也可以把本机账号写入 `scripts/auramate_credentials.local.json`，结构参考 `assets/templates/auramate_credentials.local.example.json`。该文件已被 Git 忽略，便于 agent 直接登录，同时避免明文密码进入公开提交历史。
 
-已有登录状态的 Chrome 会话也可以直接用于截图，不必重复输入密码。
+每次截图会生成 `work/assets/auramate-capture.json`，记录实时采集时间和两个在线页面 URL。`scripts/check_capture.py` 默认拒绝超过 12 小时的截图，也拒绝复用示例图。
 
 若财运产品路由随年份变化，可通过 `AURAMATE_FORTUNE_URL` 指定当年的页面地址。
 
@@ -126,6 +126,7 @@ auramate-gzh-month/
 ├── scripts/
 │   ├── bazi_core.py
 │   ├── capture_auramate.py
+│   ├── check_capture.py
 │   ├── render_month_assets.py
 │   ├── render_wechat_html.py
 │   ├── title_rules.py

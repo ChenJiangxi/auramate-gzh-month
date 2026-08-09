@@ -15,6 +15,7 @@ STEMS = {
     "庚": ("金", "阳"), "辛": ("金", "阴"),
     "壬": ("水", "阳"), "癸": ("水", "阴"),
 }
+DAY_MASTER_NAMES = {stem: stem + element for stem, (element, _) in STEMS.items()}
 STEM_ORDER = "甲乙丙丁戊己庚辛壬癸"
 BRANCH_ORDER = "子丑寅卯辰巳午未申酉戌亥"
 HIDDEN_STEMS = {
@@ -201,6 +202,7 @@ def build_context(day_master: str, month_pillar: str, year: int | None, date_ran
     subtitle = f"{stem_relation}透出，{main_relation}当令"
     return {
         "day_master": day_master,
+        "day_master_name": DAY_MASTER_NAMES[day_master],
         "day_master_element": element,
         "day_master_polarity": polarity,
         "month_pillar": month_pillar,
@@ -212,8 +214,8 @@ def build_context(day_master: str, month_pillar: str, year: int | None, date_ran
         "day_pillars": pillars,
         "year": year,
         "date_range": date_range,
-        "cover_title": f"日主{day_master}{element}的{month_pillar}月",
-        "article_title_prefix": f"日主{day_master}{element}的{month_pillar}月：",
+        "cover_title": f"日主{DAY_MASTER_NAMES[day_master]}的{month_pillar}月",
+        "article_title_prefix": f"日主{DAY_MASTER_NAMES[day_master]}的{month_pillar}月：",
         "cover_subtitle": subtitle,
         "cover_tagline": ELEMENT_TAGLINES[element],
         "palette": PALETTES[element],
