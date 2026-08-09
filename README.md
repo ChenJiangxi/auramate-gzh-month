@@ -13,6 +13,8 @@
 - **复制标题**：复制纯文本标题，粘贴到公众号标题框。
 - **复制正文**：复制带内联样式和图片的正文富文本，粘贴到公众号正文编辑器。
 
+公众号标题固定使用 `日主{天干}{五行}的{流月干支}月：{主题句}`，例如 `日主甲木的丙申月：xxx`。检查器和预览生成器都会依据 `context.json` 拒绝错误前缀。
+
 流程到预览页结束，不自动登录、修改或保存微信公众号后台。
 
 <img src="assets/readme/mobile-preview.png" alt="一键粘贴预览页移动端效果" width="390">
@@ -73,9 +75,9 @@ python3 -m pip install -r requirements.txt
 2. 按 `references/editorial-standard.md` 写 3200–5000 字 Markdown。
 3. 用图像生成模型制作无字封面背景，再运行 `scripts/render_month_assets.py` 叠字和画图。
 4. 从 AuraMate 官网取得财运分析、缘分测算两张真实截图。
-5. 运行 `scripts/render_wechat_html.py` 生成干净正文 HTML。
+5. 运行 `scripts/check_article.py work/article.md --context work/context.json` 检查结构与固定标题格式，再生成干净正文 HTML。
 6. 运行 `scripts/validate_gzh_html.py`，修到 0 ERROR、0 WARNING。
-7. 运行 `scripts/wrap_preview.py`，生成标题与正文可分别复制的预览页。
+7. 运行 `scripts/wrap_preview.py work/article.html --context work/context.json --title-file work/article.md`，再次校验标题并生成标题与正文可分别复制的预览页。
 
 完整命令、文章章节顺序和质量门槛见 [SKILL.md](SKILL.md)。
 
@@ -126,6 +128,7 @@ auramate-gzh-month/
 │   ├── capture_auramate.py
 │   ├── render_month_assets.py
 │   ├── render_wechat_html.py
+│   ├── title_rules.py
 │   ├── validate_gzh_html.py
 │   └── wrap_preview.py
 ├── assets/

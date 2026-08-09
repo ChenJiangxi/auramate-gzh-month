@@ -42,6 +42,8 @@ python3 scripts/bazi_core.py \
 
 按下列顺序写 3200–5000 个中文字符的 Markdown：
 
+一级标题固定为 `日主{天干}{五行}的{流月干支}月：{主题句}`，例如 `日主甲木的丙申月：xxx`。“日主”必须在最前，冒号使用全角 `：`，其后的主题句可随正文变化。
+
 1. 开场：节气场景、日主与流月关系、核心矛盾。
 2. 固定提示：`以下内容以日主与流月关系为主，适合作为月度节奏参考；具体吉凶仍需结合完整八字、大运与流年同看。`
 3. 流月底层结构：月干十神、月支主气与藏干暗线。
@@ -84,7 +86,7 @@ python3 scripts/render_month_assets.py \
 运行：
 
 ```bash
-python3 scripts/check_article.py work/article.md
+python3 scripts/check_article.py work/article.md --context work/context.json
 python3 scripts/render_wechat_html.py \
   --context work/context.json \
   --article work/article.md \
@@ -92,7 +94,7 @@ python3 scripts/render_wechat_html.py \
   --qr assets/brand/auramate-wechat-qrcode.png \
   --output work/article.html
 python3 scripts/validate_gzh_html.py work/article.html
-python3 scripts/wrap_preview.py work/article.html --title-file work/article.md
+python3 scripts/wrap_preview.py work/article.html --context work/context.json --title-file work/article.md
 ```
 
 验证必须达到 0 ERROR、0 WARNING。重点复查移动端：外层主题色底框左右留白、所有图片宽度、标题单行、信息图文字是否溢出、正文是否过窄。不要通过扩大所有段落或图片来修一个局部边距。
@@ -106,6 +108,7 @@ python3 scripts/wrap_preview.py work/article.html --title-file work/article.md
 ## 交付标准
 
 - 十神、藏干、关系图与正文完全一致。
+- 公众号标题严格使用 `日主{天干}{五行}的{流月干支}月：{主题句}`，并通过 `context.json` 校验。
 - 封面 2.35:1，标题为粗宋体单行，无图注。
 - 五行主题有明显变化，同时保留 AuraMate 的金色品牌点缀。
 - 正文以洞察为主，配图为辅；六大日柱图与正文不机械重复。

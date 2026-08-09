@@ -213,6 +213,7 @@ def build_context(day_master: str, month_pillar: str, year: int | None, date_ran
         "year": year,
         "date_range": date_range,
         "cover_title": f"日主{day_master}{element}的{month_pillar}月",
+        "article_title_prefix": f"日主{day_master}{element}的{month_pillar}月：",
         "cover_subtitle": subtitle,
         "cover_tagline": ELEMENT_TAGLINES[element],
         "palette": PALETTES[element],

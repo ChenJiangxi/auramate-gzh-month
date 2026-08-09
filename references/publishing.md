@@ -34,7 +34,7 @@ unset AURAMATE_PASSWORD
 生成命令：
 
 ```bash
-python3 scripts/wrap_preview.py work/article.html --title-file work/article.md
+python3 scripts/wrap_preview.py work/article.html --context work/context.json --title-file work/article.md
 ```
 
 在 390px 移动视口检查 `scrollWidth` 等于视口宽度，确认没有横向溢出。标题区和按钮属于预览工具，不得被复制进公众号正文。

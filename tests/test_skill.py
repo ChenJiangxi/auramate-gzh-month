@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import bazi_core  # noqa: E402
 import render_month_assets  # noqa: E402
 import render_wechat_html  # noqa: E402
+import title_rules  # noqa: E402
 import validate_gzh_html  # noqa: E402
 import wrap_preview  # noqa: E402
 
@@ -47,6 +48,20 @@ class BaziCoreTests(unittest.TestCase):
     def test_five_elements_use_five_palettes(self) -> None:
         colors = {bazi_core.PALETTES[element]["primary"] for element in "木火土金水"}
         self.assertEqual(len(colors), 5)
+
+    def test_article_title_prefix_is_fixed_for_every_day_master(self) -> None:
+        for stem in bazi_core.STEMS:
+            context = bazi_core.build_context(stem, "丙申", 2026, "2026.8.7 — 9.7")
+            expected = f'日主{stem}{context["day_master_element"]}的丙申月：'
+            self.assertEqual(context["article_title_prefix"], expected)
+            self.assertEqual(title_rules.validate_title(expected + "主题句", context), expected + "主题句")
+            with self.assertRaises(ValueError):
+                title_rules.validate_title(f'{stem}{context["day_master_element"]}日主的丙申月：主题句', context)
+
+    def test_article_title_requires_text_after_prefix(self) -> None:
+        context = bazi_core.build_context("甲", "丙申", 2026, "2026.8.7 — 9.7")
+        with self.assertRaises(ValueError):
+            title_rules.validate_title("日主甲木的丙申月：", context)
 
 
 class PipelineTests(unittest.TestCase):

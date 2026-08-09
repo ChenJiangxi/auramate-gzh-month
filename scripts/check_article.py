@@ -4,8 +4,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 from pathlib import Path
+
+from title_rules import extract_markdown_title, validate_title
 
 
 DISCLAIMER = "以下内容以日主与流月关系为主，适合作为月度节奏参考；具体吉凶仍需结合完整八字、大运与流年同看。"
@@ -16,10 +19,17 @@ PLACEHOLDERS = ["[[ENERGY_MAP]]", "[[RELATION_MAP]]", "[[PILLARS_MAP]]", "[[AURA
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("article")
+    parser.add_argument("--context", required=True)
     parser.add_argument("--minimum-chars", type=int, default=3200)
     args = parser.parse_args()
-    text = Path(args.article).read_text(encoding="utf-8")
+    article = Path(args.article)
+    text = article.read_text(encoding="utf-8")
+    context = json.loads(Path(args.context).read_text(encoding="utf-8"))
     errors = []
+    try:
+        validate_title(extract_markdown_title(article), context)
+    except ValueError as error:
+        errors.append(str(error))
     chinese_chars = len(re.findall(r"[\u3400-\u9fff]", text))
     if chinese_chars < args.minimum_chars:
         errors.append(f"中文字符仅 {chinese_chars}，低于 {args.minimum_chars}")
