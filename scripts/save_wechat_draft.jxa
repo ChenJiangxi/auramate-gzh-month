@@ -1,0 +1,111 @@
+ObjC.import("Foundation");
+
+function parseArgs(argv) {
+  const values = {};
+  for (let i = 0; i < argv.length; i += 2) {
+    if (!argv[i].startsWith("--") || i + 1 >= argv.length) {
+      throw new Error("用法：--title 文章标题 --html /absolute/path/article.html");
+    }
+    values[argv[i].slice(2)] = argv[i + 1];
+  }
+  if (!values.title || !values.html) {
+    throw new Error("必须提供 --title 和 --html");
+  }
+  return values;
+}
+
+function run(argv) {
+  const args = parseArgs(argv);
+  const htmlPath = $(args.html).stringByStandardizingPath.js;
+  const html = $.NSString.stringWithContentsOfFileEncodingError(
+    htmlPath,
+    $.NSUTF8StringEncoding,
+    null
+  );
+  if (!html) throw new Error("无法读取 HTML：" + htmlPath);
+
+  const chrome = Application("Google Chrome");
+  if (chrome.windows.length === 0) throw new Error("Google Chrome 未打开");
+  const win = chrome.windows[0];
+  let targetIndex = -1;
+  for (let i = 0; i < win.tabs.length; i++) {
+    const url = String(win.tabs[i].url());
+    if (url.includes("mp.weixin.qq.com/cgi-bin/appmsg") && url.includes("action=edit")) {
+      targetIndex = i + 1;
+      break;
+    }
+  }
+  if (targetIndex < 0) throw new Error("未找到微信公众号图文编辑页标签");
+  win.activeTabIndex = targetIndex;
+  delay(0.5);
+
+  const payload = JSON.stringify({ title: args.title, html: html.js });
+  const inserted = win.activeTab.execute({ javascript: `
+(() => {
+  const payload = ${payload};
+  const fire = (el, type) => el.dispatchEvent(new Event(type, { bubbles: true, cancelable: true }));
+  const selectAllIn = (el) => {
+    el.focus();
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+  };
+  const editors = Array.from(document.querySelectorAll(".ProseMirror[contenteditable='true']"));
+  const titleEditor = editors.find(el => (el.getAttribute("data-placeholder") || "").includes("标题"));
+  const bodyEditor = editors.filter(el => !(el.getAttribute("data-placeholder") || "").includes("标题")).pop();
+  const titleTextarea = document.querySelector("textarea#title, textarea[name='title']");
+  if (!bodyEditor) throw new Error("未找到正文 ProseMirror 编辑器");
+  if (titleTextarea) {
+    titleTextarea.value = payload.title;
+    fire(titleTextarea, "input");
+    fire(titleTextarea, "change");
+  }
+  if (titleEditor) {
+    selectAllIn(titleEditor);
+    document.execCommand("insertText", false, payload.title);
+    titleEditor.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: payload.title }));
+  }
+  selectAllIn(bodyEditor);
+  document.execCommand("insertHTML", false, payload.html);
+  bodyEditor.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertHTML", data: null }));
+  fire(bodyEditor, "change");
+  return JSON.stringify({ textLength: bodyEditor.innerText.length, imageCount: bodyEditor.querySelectorAll("img").length });
+})()
+` });
+  delay(2);
+
+  const saved = win.activeTab.execute({ javascript: `
+(() => {
+  const visible = el => !!(el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+  const button = Array.from(document.querySelectorAll("button,a")).filter(visible).find(el => {
+    const text = (el.innerText || el.textContent || "").trim();
+    return text === "保存为草稿" || text === "保存";
+  });
+  if (!button) return JSON.stringify({ ok: false, reason: "未找到保存按钮" });
+  ["mouseover", "mousedown", "mouseup", "click"].forEach(type => button.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window })));
+  return JSON.stringify({ ok: true, button: (button.innerText || button.textContent || "").trim() });
+})()
+` });
+  delay(3);
+
+  const verified = win.activeTab.execute({ javascript: `
+JSON.stringify((() => {
+  const editors = Array.from(document.querySelectorAll(".ProseMirror[contenteditable='true']"));
+  const body = editors.filter(el => !(el.getAttribute("data-placeholder") || "").includes("标题")).pop();
+  if (!body) return { ok: false, reason: "保存后未找到正文编辑器" };
+  const first = body.querySelector("img");
+  return {
+    ok: body.innerText.length > 0,
+    textLength: body.innerText.length,
+    imageCount: body.querySelectorAll("img").length,
+    hasDisclaimer: body.innerText.includes("以下内容以日主与流月关系为主"),
+    hasProductCta: body.innerText.includes("扫码使用产品"),
+    firstImageRatio: first && first.naturalHeight ? first.naturalWidth / first.naturalHeight : null
+  };
+})())
+` });
+
+  return JSON.stringify({ inserted: JSON.parse(inserted), saved: JSON.parse(saved), verified: JSON.parse(verified) });
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "灵伴公众号流月运势"
+  short_description: "按日主五行生成深度流月文章、配图并保存微信公众号草稿"
+  default_prompt: "Use $auramate-gzh-month 生成指定日主的流月公众号文章、配图并保存到微信公众号草稿。"

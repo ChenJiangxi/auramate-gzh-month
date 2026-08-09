@@ -1,0 +1,200 @@
+{
+  "day_master": "癸",
+  "day_master_element": "水",
+  "day_master_polarity": "阴",
+  "month_pillar": "丙申",
+  "month_stem": "丙",
+  "month_branch": "申",
+  "month_stem_ten_god": "正财",
+  "hidden_stems": [
+    {
+      "stem": "庚",
+      "ten_god": "正印",
+      "role": "主气"
+    },
+    {
+      "stem": "壬",
+      "ten_god": "劫财",
+      "role": "中气"
+    },
+    {
+      "stem": "戊",
+      "ten_god": "正官",
+      "role": "余气"
+    }
+  ],
+  "branch_relations": [
+    {
+      "trigger": "寅",
+      "condition": "原局见寅",
+      "relation": "寅申冲，兼见刑意",
+      "kind": "冲／刑",
+      "meaning": "路径变化与摩擦可能并存，承诺、付款和责任先说清。"
+    },
+    {
+      "trigger": "巳",
+      "condition": "原局见巳",
+      "relation": "巳申合，兼见刑意",
+      "kind": "合／刑",
+      "meaning": "连接机会与合作摩擦可能并存，承诺、付款和责任先说清。"
+    },
+    {
+      "trigger": "亥",
+      "condition": "原局见亥",
+      "relation": "申亥害",
+      "kind": "害",
+      "meaning": "不对称信息与暗处消耗增多，重要沟通要留痕。"
+    },
+    {
+      "trigger": "子辰",
+      "condition": "原局同时见子、辰",
+      "relation": "申子辰三合水势",
+      "kind": "成局",
+      "meaning": "只有条件较完整时才讨论成势，不能仅凭一个流月断定合化。"
+    },
+    {
+      "trigger": "酉戌",
+      "condition": "原局同时见酉、戌",
+      "relation": "申酉戌三会金势",
+      "kind": "成势",
+      "meaning": "同类气势可能增强，仍需结合节令、透干与全局判断。"
+    }
+  ],
+  "day_pillars": [
+    {
+      "pillar": "癸丑",
+      "branch": "丑",
+      "month_relation": "无直接冲合刑害",
+      "hidden_stems": [
+        "己",
+        "癸",
+        "辛"
+      ],
+      "hidden_relations": [
+        {
+          "stem": "己",
+          "ten_god": "七杀"
+        },
+        {
+          "stem": "癸",
+          "ten_god": "比肩"
+        },
+        {
+          "stem": "辛",
+          "ten_god": "偏印"
+        }
+      ]
+    },
+    {
+      "pillar": "癸卯",
+      "branch": "卯",
+      "month_relation": "无直接冲合刑害",
+      "hidden_stems": [
+        "乙"
+      ],
+      "hidden_relations": [
+        {
+          "stem": "乙",
+          "ten_god": "食神"
+        }
+      ]
+    },
+    {
+      "pillar": "癸巳",
+      "branch": "巳",
+      "month_relation": "合、刑",
+      "hidden_stems": [
+        "丙",
+        "戊",
+        "庚"
+      ],
+      "hidden_relations": [
+        {
+          "stem": "丙",
+          "ten_god": "正财"
+        },
+        {
+          "stem": "戊",
+          "ten_god": "正官"
+        },
+        {
+          "stem": "庚",
+          "ten_god": "正印"
+        }
+      ]
+    },
+    {
+      "pillar": "癸未",
+      "branch": "未",
+      "month_relation": "无直接冲合刑害",
+      "hidden_stems": [
+        "己",
+        "丁",
+        "乙"
+      ],
+      "hidden_relations": [
+        {
+          "stem": "己",
+          "ten_god": "七杀"
+        },
+        {
+          "stem": "丁",
+          "ten_god": "偏财"
+        },
+        {
+          "stem": "乙",
+          "ten_god": "食神"
+        }
+      ]
+    },
+    {
+      "pillar": "癸酉",
+      "branch": "酉",
+      "month_relation": "无直接冲合刑害",
+      "hidden_stems": [
+        "辛"
+      ],
+      "hidden_relations": [
+        {
+          "stem": "辛",
+          "ten_god": "偏印"
+        }
+      ]
+    },
+    {
+      "pillar": "癸亥",
+      "branch": "亥",
+      "month_relation": "害",
+      "hidden_stems": [
+        "壬",
+        "甲"
+      ],
+      "hidden_relations": [
+        {
+          "stem": "壬",
+          "ten_god": "劫财"
+        },
+        {
+          "stem": "甲",
+          "ten_god": "伤官"
+        }
+      ]
+    }
+  ],
+  "year": 2026,
+  "date_range": "2026.8.7 — 9.7",
+  "cover_title": "日主癸水的丙申月",
+  "cover_subtitle": "正财透出，正印当令",
+  "cover_tagline": "让流动拥有秩序",
+  "palette": {
+    "primary": "#087EA8",
+    "dark": "#061A33",
+    "light": "#F1F9FE",
+    "accent": "#8ED8FF",
+    "gold": "#D8AA52",
+    "text": "#25384D"
+  },
+  "disclaimer": "以下内容以日主与流月关系为主，适合作为月度节奏参考；具体吉凶仍需结合完整八字、大运与流年同看。",
+  "website": "auramate.com.cn",
+  "qr_cta": "扫码使用产品"
+}
