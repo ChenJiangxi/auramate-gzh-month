@@ -85,6 +85,34 @@ def fallback_background(size: tuple[int, int], palette: dict) -> Image.Image:
     return image
 
 
+def cover_text_scrim(size: tuple[int, int], palette: dict, max_alpha: int = 224) -> Image.Image:
+    """Build a dark text scrim with a smooth horizontal fade and no vertical seam."""
+    w, h = size
+    solid_end = round(w * 0.38)
+    fade_end = round(w * 0.76)
+    if fade_end <= solid_end:
+        raise ValueError("封面渐变范围无效")
+
+    alpha_values = []
+    for x in range(w):
+        if x <= solid_end:
+            alpha = max_alpha
+        elif x >= fade_end:
+            alpha = 0
+        else:
+            progress = (x - solid_end) / (fade_end - solid_end)
+            smooth = progress * progress * (3 - 2 * progress)
+            alpha = round(max_alpha * (1 - smooth))
+        alpha_values.append(alpha)
+
+    alpha_row = Image.new("L", (w, 1))
+    alpha_row.putdata(alpha_values)
+    alpha_mask = alpha_row.resize((w, h), Image.Resampling.NEAREST)
+    scrim = Image.new("RGBA", size, (*rgb(palette["dark"]), 0))
+    scrim.putalpha(alpha_mask)
+    return scrim
+
+
 def render_cover(context: dict, background: Path | None, output: Path) -> None:
     size = (1410, 600)
     palette = context["palette"]
@@ -94,13 +122,10 @@ def render_cover(context: dict, background: Path | None, output: Path) -> None:
     else:
         image = fallback_background(size, palette)
     image = image.convert("RGBA")
-    overlay = Image.new("RGBA", size, (0, 0, 0, 0))
-    draw = ImageDraw.Draw(overlay, "RGBA")
-    draw.rectangle((0, 0, 790, 600), fill=rgba(palette["dark"], 232))
-    draw.rectangle((0, 0, 920, 600), fill=(0, 0, 0, 40))
+    image = Image.alpha_composite(image, cover_text_scrim(size, palette))
+    draw = ImageDraw.Draw(image, "RGBA")
     draw.rectangle((18, 18, 1392, 582), outline=rgba(palette["gold"], 220), width=2)
     draw.rectangle((36, 36, 1374, 564), outline=rgba(palette["gold"], 100), width=1)
-    image = Image.alpha_composite(image, overlay)
     draw = ImageDraw.Draw(image)
     gold, white, accent = palette["gold"], "#FFFDF8", palette["accent"]
     draw.text((72, 68), f"AuraMate  |  {context['month_pillar']}月", font=fnt(28), fill=gold)
