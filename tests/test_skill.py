@@ -17,6 +17,7 @@ import bazi_core  # noqa: E402
 import render_month_assets  # noqa: E402
 import render_wechat_html  # noqa: E402
 import validate_gzh_html  # noqa: E402
+import wrap_preview  # noqa: E402
 
 
 class BaziCoreTests(unittest.TestCase):
@@ -86,6 +87,19 @@ class PipelineTests(unittest.TestCase):
             self.assertIn("margin:0 -28px", html)
             with Image.open(assets / "cover.jpg") as cover:
                 self.assertEqual(cover.size, (1410, 600))
+            with Image.open(assets / "energy-map.jpg") as energy:
+                self.assertEqual(energy.size, (1080, 920))
+
+    def test_preview_separates_title_and_body_copy_targets(self) -> None:
+        template = (ROOT / "assets/preview-template.html").read_text(encoding="utf-8")
+        title = "日主癸水的丙申月：财星透照与印星生身"
+        preview = wrap_preview.build_preview("<section>正文</section>", title, template)
+        self.assertIn(f'id="articleTitle">{title}</h1>', preview)
+        self.assertIn("copyTitle()", preview)
+        self.assertIn("copyBody()", preview)
+        self.assertIn('<section id="gzh-content">', preview)
+        body_start = preview.index('<section id="gzh-content">')
+        self.assertNotIn(title, preview[body_start:])
 
 
 if __name__ == "__main__":

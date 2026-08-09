@@ -122,42 +122,48 @@ def frame(draw: ImageDraw.ImageDraw, width: int, height: int, palette: dict) -> 
 
 
 def render_energy(context: dict, output: Path) -> None:
-    w, h = 1080, 1450
+    w, h = 1080, 920
     p = context["palette"]
-    image = Image.new("RGBA", (w, h), p["dark"])
+    image = Image.new("RGBA", (w, h), "#F4F6F7")
     draw = ImageDraw.Draw(image, "RGBA")
     frame(draw, w, h, p)
-    draw.text((78, 82), f"{context['month_pillar']}月能量结构", font=fnt(52), fill=p["gold"])
-    draw.text((82, 150), "月干在外，月支在内，藏干是支内暗线", font=fnt(27), fill=p["accent"])
+    draw.text((76, 70), f"{context['month_pillar']}月的作用路径", font=fnt(48), fill=p["dark"])
+    draw.text((80, 132), "月干在外显题，月支在内定底色", font=fnt(25), fill="#52616D")
+    draw.line((80, 180, 1000, 180), fill=rgba(p["gold"], 150), width=2)
 
-    draw.rounded_rectangle((340, 235, 740, 385), radius=24, fill=rgba(p["primary"], 55), outline=p["gold"], width=3)
-    centered(draw, (340, 250, 740, 315), f"{context['month_stem']} · {context['month_stem_ten_god']}", fnt(39), "#FFFFFF")
-    centered(draw, (340, 315, 740, 370), "流月天干：外显主题", fnt(23), p["accent"])
-    arrow(draw, (540, 390), (540, 468), p["gold"], 5)
+    draw.rounded_rectangle((72, 218, 400, 518), radius=16, fill="#FFFFFF", outline="#D6DDE2", width=2)
+    draw.text((104, 248), "月干｜外显主题", font=fnt(25), fill="#66727C")
+    draw.line((104, 294, 368, 294), fill=p["gold"], width=3)
+    draw.rounded_rectangle((108, 326, 364, 426), radius=12, fill=p["dark"], outline=p["gold"], width=2)
+    centered(draw, (108, 326, 364, 426), f"{context['month_stem']} · {context['month_stem_ten_god']}", fnt(34), "#FFFFFF")
+    centered(draw, (102, 447, 370, 493), "目标、机会与现实结果", fnt(21), p["text"])
 
-    draw.rounded_rectangle((82, 485, 998, 910), radius=28, fill=rgba(p["primary"], 42), outline=p["accent"], width=3)
-    draw.text((120, 520), f"月支：{context['month_branch']}", font=fnt(40), fill="#FFFFFF")
-    draw.text((120, 578), "内部藏干（主气在前）", font=fnt(25), fill=p["accent"])
+    draw.rounded_rectangle((430, 218, 1008, 518), radius=16, fill="#FFFFFF", outline="#D6DDE2", width=2)
+    draw.text((462, 248), "月支｜内部结构", font=fnt(25), fill="#66727C")
+    draw.text((822, 246), f"{context['month_branch']} · 月令", font=fnt(27), fill=p["dark"])
+    draw.line((462, 294, 976, 294), fill=p["gold"], width=3)
     hidden = context["hidden_stems"]
-    box_width = 250
-    gap = 34
+    box_width = 156
+    gap = 18
     total = len(hidden) * box_width + (len(hidden) - 1) * gap
-    x = (w - total) // 2
+    x = 462 + (514 - total) // 2
     for item in hidden:
-        draw.rounded_rectangle((x, 660, x + box_width, 815), radius=20, fill=rgba(p["dark"], 235), outline=p["gold"], width=2)
-        centered(draw, (x, 676, x + box_width, 739), item["stem"], fnt(38), "#FFFFFF")
-        centered(draw, (x, 740, x + box_width, 795), f"{item['ten_god']} · {item['role']}", fnt(23), p["accent"])
+        draw.rounded_rectangle((x, 326, x + box_width, 430), radius=12, fill=p["light"], outline=rgba(p["primary"], 150), width=2)
+        centered(draw, (x, 334, x + box_width, 382), item["stem"], fnt(32), p["dark"])
+        centered(draw, (x, 383, x + box_width, 421), f"{item['ten_god']} · {item['role']}", fit_font(draw, f"{item['ten_god']} · {item['role']}", box_width - 18, 20, 16), p["primary"])
         x += box_width + gap
-    draw.text((120, 850), "读图：这些天干属于月支内部，不与流月天干并列。", font=fnt(23), fill="#FFFFFF")
-    arrow(draw, (540, 925), (540, 1010), p["accent"], 5)
+    centered(draw, (458, 447, 980, 493), "藏干属于月支内部，不与月干并列", fnt(20), "#52616D")
 
-    draw.rounded_rectangle((330, 1025, 750, 1195), radius=26, fill=rgba(p["primary"], 75), outline=p["gold"], width=3)
-    centered(draw, (330, 1040, 750, 1110), f"日主：{context['day_master']}{context['day_master_element']}", fnt(42), "#FFFFFF")
-    centered(draw, (330, 1112, 750, 1175), context["cover_tagline"], fnt(26), p["accent"])
+    arrow(draw, (236, 530), (390, 608), p["gold"], 4)
+    arrow(draw, (720, 530), (650, 608), p["primary"], 4)
+    draw.rounded_rectangle((170, 610, 910, 758), radius=16, fill=p["dark"], outline=p["gold"], width=2)
+    draw.rectangle((170, 610, 184, 758), fill=p["primary"])
+    draw.text((222, 640), f"日主承接｜{context['day_master']}{context['day_master_element']}", font=fnt(35), fill="#FFFFFF")
+    draw.text((224, 699), context["cover_tagline"], font=fnt(23), fill=p["accent"])
 
-    draw.rounded_rectangle((82, 1270, 998, 1375), radius=18, fill=rgba(p["primary"], 45), outline=p["gold"], width=2)
-    summary = f"{context['month_stem_ten_god']}在外显题，{hidden[0]['ten_god']}在内托底；其余藏干提示责任与消耗。"
-    centered(draw, (105, 1283, 975, 1362), summary, fit_font(draw, summary, 820, 25, 19), "#FFFFFF")
+    summary = f"{context['month_stem_ten_god']}在外显题，{hidden[0]['ten_god']}在内托底；{hidden[1]['stem']}、{hidden[2]['stem']}是{context['month_branch']}中藏干。" if len(hidden) == 3 else f"{context['month_stem_ten_god']}在外显题，{hidden[0]['ten_god']}在内托底。"
+    draw.rounded_rectangle((72, 798, 1008, 862), radius=12, fill="#FFF9EC", outline=rgba(p["gold"], 150), width=2)
+    centered(draw, (92, 805, 988, 855), summary, fit_font(draw, summary, 850, 23, 18), p["dark"])
     image.convert("RGB").save(output, quality=93, optimize=True)
 
 
