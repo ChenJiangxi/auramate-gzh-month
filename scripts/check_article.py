@@ -12,12 +12,45 @@ from title_rules import extract_markdown_title, validate_title
 
 
 DISCLAIMER = "以下内容以日主与流月关系为主，适合作为月度节奏参考；具体吉凶仍需结合完整八字、大运与流年同看。"
-ORDERED_HEADINGS = ["底层", "身强", "暗线", "核心维度", "日柱", "AuraMate"]
+ORDERED_HEADING_MODULES = [
+    ("流月结构", ("底层", "结构", "月令", "财印", "五行")),
+    ("强弱策略", ("身强", "身弱", "强弱", "承接", "借势", "分型")),
+    (
+        "关系触发",
+        (
+            "暗线", "刑冲", "冲合", "合害", "刑与合", "冲与合",
+            "六合", "六冲", "三刑", "六害", "关系", "触发", "成局",
+        ),
+    ),
+    ("现实维度", ("核心维度", "四大维度", "现实", "工作", "事业", "财富")),
+    ("六大日柱", ("日柱", "六柱", "同是")),
+    ("AuraMate 产品", ("AuraMate", "数字化觉察", "产品")),
+]
 CORE_PLACEHOLDERS = ["[[ENERGY_MAP]]", "[[RELATION_MAP]]", "[[PILLARS_MAP]]"]
 PRODUCT_PLACEHOLDERS = [
     "[[AURAMATE_FORTUNE]]", "[[AURAMATE_KLINE]]", "[[AURAMATE_REPORT]]", "[[AURAMATE_TALENT]]",
     "[[AURAMATE_HEALTH]]", "[[AURAMATE_MATCH]]", "[[AURAMATE_MBTI]]",
 ]
+
+
+def validate_heading_modules(headings: list[str]) -> list[str]:
+    """Check the editorial spine without prescribing visible section titles."""
+    errors = []
+    cursor = -1
+    for module, aliases in ORDERED_HEADING_MODULES:
+        position = next(
+            (
+                index
+                for index, heading in enumerate(headings)
+                if index > cursor and any(alias in heading for alias in aliases)
+            ),
+            -1,
+        )
+        if position < 0:
+            errors.append(f"缺少或顺序错误的内容模块：{module}")
+            continue
+        cursor = position
+    return errors
 
 
 def main() -> None:
@@ -40,16 +73,7 @@ def main() -> None:
     if f"**提示：** {DISCLAIMER}" not in text:
         errors.append("固定提示语前必须有加粗的“提示：”")
     headings = [line[3:].strip() for line in text.splitlines() if line.startswith("## ")]
-    heading_text = "\n".join(headings)
-    positions = []
-    for keyword in ORDERED_HEADINGS:
-        position = heading_text.find(keyword)
-        if position < 0:
-            errors.append(f"缺少章节关键词：{keyword}")
-        positions.append(position)
-    valid_positions = [position for position in positions if position >= 0]
-    if valid_positions != sorted(valid_positions):
-        errors.append("章节顺序不符合：底层结构→身强身弱→关系暗线→四大维度→六大日柱→AuraMate")
+    errors.extend(validate_heading_modules(headings))
     for placeholder in CORE_PLACEHOLDERS:
         if text.count(placeholder) != 1:
             errors.append(f"占位符应出现一次：{placeholder}")

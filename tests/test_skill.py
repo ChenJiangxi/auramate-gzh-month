@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 
 import bazi_core  # noqa: E402
+import check_article  # noqa: E402
 import check_capture  # noqa: E402
 import render_month_assets  # noqa: E402
 import render_wechat_html  # noqa: E402
@@ -68,6 +69,28 @@ class BaziCoreTests(unittest.TestCase):
         context = bazi_core.build_context("甲", "丙申", 2026, "2026.8.7 — 9.7")
         with self.assertRaises(ValueError):
             title_rules.validate_title("日主甲木的丙申月：", context)
+
+    def test_creative_section_titles_preserve_the_editorial_spine(self) -> None:
+        headings = [
+            "财印照面：目标被看见以后，底气能不能跟上",
+            "先借势还是先蓄水：两种承接路线",
+            "申月的刑与合：边界从暗处出现",
+            "结构看懂以后，现实会在哪些地方发生变化",
+            "同是癸水，六柱为何走出不同路径",
+            "把模糊感受交给数字化觉察",
+        ]
+        self.assertEqual(check_article.validate_heading_modules(headings), [])
+
+    def test_creative_section_titles_still_enforce_module_order(self) -> None:
+        headings = [
+            "财印照面：目标被看见以后，底气能不能跟上",
+            "先借势还是先蓄水：两种承接路线",
+            "结构看懂以后，现实会在哪些地方发生变化",
+            "申月的刑与合：边界从暗处出现",
+            "同是癸水，六柱为何走出不同路径",
+            "把模糊感受交给数字化觉察",
+        ]
+        self.assertTrue(check_article.validate_heading_modules(headings))
 
     def test_live_capture_manifest_is_required_and_fresh(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
