@@ -26,8 +26,10 @@ def validate_capture(assets: Path, max_age_hours: float) -> list[str]:
         errors.append("产品截图不是来自实时 Chrome 采集")
     if age_hours < 0 or age_hours > max_age_hours:
         errors.append(f"产品截图已超过 {max_age_hours:g} 小时，请重新实时截取")
-    for key in ("fortune", "match"):
-        row = manifest.get(key) or {}
+    products = manifest.get("products") or {}
+    if len(products) < 5:
+        errors.append("实时产品图库少于 5 类，不能只使用财运与缘分截图")
+    for key, row in products.items():
         if not str(row.get("url", "")).startswith(("https://auramate.net", "https://auramate.com.cn")):
             errors.append(f"{key} 缺少 AuraMate 在线页面 URL")
         image = assets / row.get("file", "")
@@ -47,7 +49,7 @@ def main() -> None:
         for error in errors:
             print(f"- {error}")
         raise SystemExit(1)
-    print("产品截图检查通过：两张图片均来自本次实时 Chrome 采集")
+    print("产品截图检查通过：实时产品图库来源与时效均合格")
 
 
 if __name__ == "__main__":

@@ -29,7 +29,7 @@
 
 <img src="assets/readme/relation-map.jpg" alt="刑冲合害关系触发图" width="620">
 
-AuraMate 产品章节使用官网真实、未打码截图，不另外叠加“示例截图”说明。截图用于展示功能界面，不把截图内的样例命盘当作文章命盘。
+AuraMate 产品章节使用官网实时、未打码截图，不另外叠加“示例截图”说明。截图脚本建立覆盖财运分析、人生 K 线、专业报告、天赋脑图、命理体检、缘分测算和 MBTI 命格解析的产品图库；正文按主题选择 3–4 张，不把截图内的样例命盘当作文章命盘。
 
 <img src="assets/examples/guishui-bingshen/auramate-fortune.jpg" alt="AuraMate 财运分析真实界面" width="680">
 
@@ -74,7 +74,7 @@ python3 -m pip install -r requirements.txt
 1. 运行 `scripts/bazi_core.py`，生成唯一的 `context.json`。
 2. 按 `references/editorial-standard.md` 写 3200–5000 字 Markdown。
 3. 用图像生成模型制作无字封面背景，再运行 `scripts/render_month_assets.py` 叠字和画图。
-4. 运行 `scripts/capture_auramate.py`，从登录后的 AuraMate 在线产品页实时截取财运分析、缘分测算；再运行 `scripts/check_capture.py --assets work/assets` 检查采集时间与来源。
+4. 运行 `scripts/capture_auramate.py` 建立多产品实时截图图库；再运行 `scripts/check_capture.py --assets work/assets` 检查产品数量、采集时间与来源。
 5. 运行 `scripts/check_article.py work/article.md --context work/context.json` 检查结构与固定标题格式，再生成干净正文 HTML。
 6. 运行 `scripts/validate_gzh_html.py`，修到 0 ERROR、0 WARNING。
 7. 运行 `scripts/wrap_preview.py work/article.html --context work/context.json --title-file work/article.md`，再次校验标题并生成标题与正文可分别复制的预览页。
@@ -145,4 +145,4 @@ auramate-gzh-month/
 
 文章以传统命理文化与自我觉察为定位，不替代完整八字、大运和流年判断，也不提供医学诊断、投资收益承诺或确定性的关系结论。正文固定保留如下提示：
 
-> 以下内容以日主与流月关系为主，适合作为月度节奏参考；具体吉凶仍需结合完整八字、大运与流年同看。
+> **提示：** 以下内容以日主与流月关系为主，适合作为月度节奏参考；具体吉凶仍需结合完整八字、大运与流年同看。

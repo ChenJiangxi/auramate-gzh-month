@@ -73,13 +73,15 @@ class BaziCoreTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             assets = Path(temporary)
             self.assertTrue(check_capture.validate_capture(assets, 12))
-            for name in ("auramate-fortune.jpg", "auramate-match.jpg"):
+            products = {}
+            for key in ("fortune", "kline", "report", "talent", "match"):
+                name = f"auramate-{key}.jpg"
                 (assets / name).write_bytes(b"x" * 10_001)
+                products[key] = {"url": f"https://auramate.com.cn/play/{key}", "file": name}
             manifest = {
                 "source": "live-chrome",
                 "captured_at": datetime.now(timezone.utc).isoformat(),
-                "fortune": {"url": "https://auramate.net/play/fortune-2026", "file": "auramate-fortune.jpg"},
-                "match": {"url": "https://auramate.net/app", "file": "auramate-match.jpg"},
+                "products": products,
             }
             (assets / "auramate-capture.json").write_text(json.dumps(manifest), encoding="utf-8")
             self.assertEqual(check_capture.validate_capture(assets, 12), [])
@@ -111,6 +113,7 @@ class PipelineTests(unittest.TestCase):
             render_month_assets.render_relations(context, assets / "relation-map.jpg")
             render_month_assets.render_pillars(context, assets / "pillars-map.jpg")
             shutil.copy2(ROOT / "assets/examples/guishui-bingshen/auramate-fortune.jpg", assets / "auramate-fortune.jpg")
+            shutil.copy2(ROOT / "assets/examples/guishui-bingshen/auramate-kline.jpg", assets / "auramate-kline.jpg")
             shutil.copy2(ROOT / "assets/examples/guishui-bingshen/auramate-match.jpg", assets / "auramate-match.jpg")
             markdown = (ROOT / "assets/examples/guishui-bingshen/article.md").read_text(encoding="utf-8")
             html = render_wechat_html.render(markdown, context, assets, ROOT / "assets/brand/auramate-wechat-qrcode.png")
@@ -118,6 +121,7 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(errors, [])
             self.assertEqual(warnings, [])
             self.assertGreater(leaf_count, 50)
+            self.assertIn(">提示：</span></strong>", html)
             self.assertIn("扫码使用产品", html)
             self.assertIn("小红书： AuraMate灵伴", html)
             self.assertNotIn("扫码关注我们", html)

@@ -23,15 +23,43 @@ PROFILE = os.environ.get("AURAMATE_CDP_PROFILE", "/private/tmp/auramate-gzh-mont
 CREDENTIALS_FILE = Path(
     os.environ.get("AURAMATE_CREDENTIALS_FILE", str(ROOT / "scripts/auramate_credentials.local.json"))
 ).expanduser()
-FORTUNE_URL = os.environ.get("AURAMATE_FORTUNE_URL", "https://auramate.com.cn/play/fortune-2026")
-MATCH_CANDIDATES = [
-    "https://auramate.com.cn/play/fate-match",
-    "https://auramate.com.cn/play/relationship",
-    "https://auramate.com.cn/play/compatibility",
-    "https://auramate.com.cn/play/love",
-    "https://auramate.com.cn/play/match",
-    "https://auramate.com.cn/app",
-]
+PRODUCT_SPECS = {
+    "fortune": {
+        "url": os.environ.get("AURAMATE_FORTUNE_URL", "https://auramate.com.cn/play/fortune-2026"),
+        "file": "auramate-fortune.jpg",
+        "keywords": ["财运分析"],
+    },
+    "kline": {
+        "url": "https://auramate.com.cn/play/life-kline",
+        "file": "auramate-kline.jpg",
+        "keywords": ["人生K线", "人生运势 K 线图"],
+    },
+    "report": {
+        "url": "https://auramate.com.cn/play/professional-report",
+        "file": "auramate-report.jpg",
+        "keywords": ["专业报告", "命盘总览"],
+    },
+    "talent": {
+        "url": "https://auramate.com.cn/play/brain-skills",
+        "file": "auramate-talent.jpg",
+        "keywords": ["天赋脑图", "脑力天赋雷达"],
+    },
+    "health": {
+        "url": "https://auramate.com.cn/play/health-wuyun",
+        "file": "auramate-health.jpg",
+        "keywords": ["命理体检", "先天体质"],
+    },
+    "match": {
+        "url": "https://auramate.com.cn/play/fate-match",
+        "file": "auramate-match.jpg",
+        "keywords": ["缘分测算", "八字合盘"],
+    },
+    "mbti": {
+        "url": "https://auramate.com.cn/play/mbti-personality",
+        "file": "auramate-mbti.jpg",
+        "keywords": ["MBTI命格解析"],
+    },
+}
 
 
 class CDP:
@@ -243,30 +271,22 @@ def main():
         cdp.call("Runtime.enable")
         login(cdp, email, password)
 
-        navigate(cdp, FORTUNE_URL, 5)
-        fortune_state = require_product_page(cdp, "财运分析")
-        evaluate(cdp, "window.scrollTo(0, 0)")
-        time.sleep(1)
-        screenshot(cdp, ASSETS / "auramate-fortune.jpg")
-
-        match_state = None
-        for url in MATCH_CANDIDATES:
-            navigate(cdp, url, 4)
-            state = page_state(cdp)
-            if any(keyword in state.get("text", "") for keyword in ["缘分", "合盘", "关系", "契合", "伴侣"]):
-                match_state = require_product_page(cdp, "缘分测算")
-                break
-        if not match_state:
-            raise RuntimeError("未找到可用的缘分测算产品页，拒绝沿用旧截图")
-        evaluate(cdp, "window.scrollTo(0, 0)")
-        time.sleep(1)
-        screenshot(cdp, ASSETS / "auramate-match.jpg")
+        products = {}
+        for key, spec in PRODUCT_SPECS.items():
+            navigate(cdp, spec["url"], 4)
+            state = require_product_page(cdp, key)
+            searchable = state.get("title", "") + "\n" + state.get("text", "")
+            if not any(keyword in searchable for keyword in spec["keywords"]):
+                raise RuntimeError(f"{key} 页面内容与产品不符，拒绝生成截图")
+            evaluate(cdp, "window.scrollTo(0, 0)")
+            time.sleep(0.6)
+            screenshot(cdp, ASSETS / spec["file"])
+            products[key] = {"url": state.get("url"), "file": spec["file"]}
 
         manifest = {
             "source": "live-chrome",
             "captured_at": datetime.now(timezone.utc).isoformat(),
-            "fortune": {"url": fortune_state.get("url"), "file": "auramate-fortune.jpg"},
-            "match": {"url": match_state.get("url"), "file": "auramate-match.jpg"},
+            "products": products,
         }
         (ASSETS / "auramate-capture.json").write_text(
             json.dumps(manifest, ensure_ascii=False, indent=2) + "\n",

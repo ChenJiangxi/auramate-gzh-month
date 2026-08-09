@@ -18,7 +18,12 @@ PLACEHOLDERS = {
     "[[RELATION_MAP]]": "relation-map.jpg",
     "[[PILLARS_MAP]]": "pillars-map.jpg",
     "[[AURAMATE_FORTUNE]]": "auramate-fortune.jpg",
+    "[[AURAMATE_KLINE]]": "auramate-kline.jpg",
+    "[[AURAMATE_REPORT]]": "auramate-report.jpg",
+    "[[AURAMATE_TALENT]]": "auramate-talent.jpg",
+    "[[AURAMATE_HEALTH]]": "auramate-health.jpg",
     "[[AURAMATE_MATCH]]": "auramate-match.jpg",
+    "[[AURAMATE_MBTI]]": "auramate-mbti.jpg",
 }
 EN_LABELS = {
     "底层": "BASE LOGIC", "结构": "STRUCTURE", "身强": "STRATEGY",
@@ -104,8 +109,8 @@ def flush_paragraph(buffer: list[str], blocks: list[str], palette: dict) -> None
 
 def render(markdown: str, context: dict, assets: Path, qr: Path) -> str:
     palette = context["palette"]
-    if context["disclaimer"] not in markdown:
-        raise ValueError("正文缺少固定提示语")
+    if f'**提示：** {context["disclaimer"]}' not in markdown:
+        raise ValueError("正文缺少加粗的固定提示语")
     blocks = [image_block(assets / "cover.jpg", palette)]
     buffer: list[str] = []
     chapter = 0
