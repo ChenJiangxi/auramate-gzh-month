@@ -86,10 +86,13 @@ def list_item(text: str, palette: dict) -> str:
 
 def qr_block(qr: Path, context: dict) -> str:
     p = context["palette"]
-    return f'''<section style="margin:36px 18px 8px;padding:24px 18px;background:#FFFFFF;border:1px solid {p['accent']};border-radius:8px;text-align:center;">
-<p style="margin:0 0 14px;font-size:18px;line-height:1.6;font-weight:900;color:{p['dark']};">{leaf(context['qr_cta'])}</p>
-<p style="margin:0 0 16px;font-size:13px;line-height:1.6;color:{p['primary']};">{leaf(context['website'])}</p>
-<span leaf=""><img src="{data_uri(qr)}" style="max-width:220px;height:auto;display:block;margin:0 auto;"></span>
+    return f'''<section style="margin:28px 14px 10px;padding:14px 18px 16px;background:{p['dark']};border:1px solid {p['gold']};border-radius:8px;text-align:center;">
+<p style="margin:0 0 2px;font-size:11px;line-height:1.6;color:#FFFFFF;">{leaf(f'官网： {context["website"]}')}</p>
+<p style="margin:0 0 4px;font-size:11px;line-height:1.6;color:#FFFFFF;">{leaf(f'小红书： {context["xiaohongshu"]}')}</p>
+<p style="margin:0 0 8px;font-size:11px;line-height:1.6;font-weight:900;color:{p['gold']};">{leaf(context['qr_cta'])}</p>
+<section style="width:96px;max-width:34%;margin:0 auto;padding:6px;background:#FFFFFF;border-radius:5px;">
+<span leaf=""><img src="{data_uri(qr)}" width="90" style="width:90px;max-width:100%;height:auto;display:block;margin:0 auto;"></span>
+</section>
 </section>'''
 
 

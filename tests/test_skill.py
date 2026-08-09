@@ -83,7 +83,11 @@ class PipelineTests(unittest.TestCase):
             self.assertEqual(warnings, [])
             self.assertGreater(leaf_count, 50)
             self.assertIn("扫码使用产品", html)
+            self.assertIn("小红书： AuraMate灵伴", html)
             self.assertNotIn("扫码关注我们", html)
+            self.assertIn(f"background:{context['palette']['dark']}", html)
+            self.assertIn("width:96px;max-width:34%", html)
+            self.assertIn('width="90"', html)
             self.assertIn("margin:0 -28px", html)
             with Image.open(assets / "cover.jpg") as cover:
                 self.assertEqual(cover.size, (1410, 600))

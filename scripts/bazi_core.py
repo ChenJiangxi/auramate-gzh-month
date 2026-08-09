@@ -218,6 +218,7 @@ def build_context(day_master: str, month_pillar: str, year: int | None, date_ran
         "palette": PALETTES[element],
         "disclaimer": "以下内容以日主与流月关系为主，适合作为月度节奏参考；具体吉凶仍需结合完整八字、大运与流年同看。",
         "website": "auramate.com.cn",
+        "xiaohongshu": "AuraMate灵伴",
         "qr_cta": "扫码使用产品",
     }
 
